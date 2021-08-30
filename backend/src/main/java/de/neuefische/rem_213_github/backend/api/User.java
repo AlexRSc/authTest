@@ -18,4 +18,8 @@ public class User {
     @ApiModelProperty(example = "http://foo.de", notes = "The url of the user avatar")
     private String avatar;
 
+    private String role;
+
+    private String password;
+
 }

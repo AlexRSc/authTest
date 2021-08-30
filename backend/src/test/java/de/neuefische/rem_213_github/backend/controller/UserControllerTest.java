@@ -1,55 +1,100 @@
 package de.neuefische.rem_213_github.backend.controller;
 
-import de.neuefische.rem_213_github.backend.SpringBootTests;
 import de.neuefische.rem_213_github.backend.api.User;
-import de.neuefische.rem_213_github.backend.model.UserEntity;
-import de.neuefische.rem_213_github.backend.service.UserService;
+import de.neuefische.rem_213_github.backend.config.JwtConfig;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.*;
 
-import javax.annotation.Resource;
-import java.util.Optional;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
-import static de.neuefische.rem_213_github.backend.SpringTestContextConfiguration.MOCKED_SERVICES_PROFILE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
-@ActiveProfiles(MOCKED_SERVICES_PROFILE)
-public class UserControllerTest extends SpringBootTests {
+@SpringBootTest(
+        properties = "spring.profiles.active:h2",
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+)
+class UserControllerTest {
 
-    @Resource
-    private UserController userController;
+    @LocalServerPort
+    private int port;
 
-    @Resource
-    private UserService userService; // with the profile active this service is a mock
+    private String url(){
+        return "http://localhost:" + port + "/user";
+    }
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Autowired
+    private JwtConfig jwtConfig;
 
     @Test
-    public void testGetFindUserOk() {
-        // GIVEN
-        Optional<UserEntity> userEntityOptional = Optional.of(new UserEntity());
+    public void createNewUserAsAdmin(){
+        // Given
+        User userToAdd = User.builder()
+                .name("Lisa")
+                .role("user")
+                .avatar("http://thispersondoesnotexist.com/image")
+                .build();
 
-        String name = "name";
-        when(userService.find(name)).thenReturn(userEntityOptional);
+        // When
+        HttpEntity<User> httpEntity = new HttpEntity<>(userToAdd, authorizedHeader("Frank", "admin"));
+        ResponseEntity<User> response = restTemplate.exchange(url(), HttpMethod.POST, httpEntity, User.class);
 
-        // WHEN
-        ResponseEntity<User> userResponseEntity = userController.find(name);
-
-        // THEN
-        assertEquals(HttpStatus.OK, userResponseEntity.getStatusCode());
+        // Then
+        assertThat(response.getStatusCode(), is(HttpStatus.OK));
+        User actualUser = response.getBody();
+        assertThat(actualUser.getName(), is("Lisa"));
+        assertThat(actualUser.getAvatar(), is("http://thispersondoesnotexist.com/image"));
+        assertThat(actualUser.getRole(), is("user"));
+        assertThat(actualUser.getPassword(), is(notNullValue()));
     }
 
     @Test
-    public void testGetFindUserNotFound() {
-        // GIVEN
-        when(userService.find(anyString())).thenReturn(Optional.empty());
+    public void userCanNotCreateANewUser(){
+        // Given
+        User userToAdd = User.builder()
+                .name("Lisa")
+                .role("user")
+                .avatar("http://thispersondoesnotexist.com/image")
+                .build();
 
-        // WHEN
-        ResponseEntity<User> userResponseEntity = userController.find("unknown");
+        // When
+        HttpEntity<User> httpEntity = new HttpEntity<>(userToAdd, authorizedHeader("Frank", "user"));
+        ResponseEntity<User> response = restTemplate.exchange(url(), HttpMethod.POST, httpEntity, User.class);
 
-        // THEN
-        assertEquals(HttpStatus.NOT_FOUND, userResponseEntity.getStatusCode());
+        // Then
+        assertThat(response.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
+    }
+
+    private HttpHeaders authorizedHeader(String username, String role){
+        Map<String,Object> claims = new HashMap<>();
+        claims.put("role", role);
+        Instant now = Instant.now();
+        Date iat = Date.from(now);
+        Date exp = Date.from(now.plus(Duration.ofMinutes(jwtConfig.getExpiresAfterMinutes())));
+        String token = Jwts.builder()
+                .setClaims(claims)
+                .setSubject(username)
+                .setIssuedAt(iat)
+                .setExpiration(exp)
+                .signWith(SignatureAlgorithm.HS256, jwtConfig.getSecret())
+                .compact();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+
+        return headers;
     }
 }

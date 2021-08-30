@@ -12,6 +12,7 @@ import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -60,12 +61,16 @@ public class UserController {
             @ApiResponse(code = SC_BAD_REQUEST, message = "Unable to create User with blank name"),
             @ApiResponse(code = SC_CONFLICT, message = "Unable to create User, user already exists")
     })
-    public ResponseEntity<User> create(@RequestBody User user) {
+    public ResponseEntity<User> create(@AuthenticationPrincipal UserEntity authUser, @RequestBody User user) {
+        if(!authUser.getRole().equals("admin")){
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         try {
             UserEntity userEntity = map(user);
 
             UserEntity createdUserEntity = userService.create(userEntity);
             User createdUser = map(createdUserEntity);
+            createdUser.setPassword(createdUserEntity.getPassword());
             return ok(createdUser);
 
         } catch (IllegalArgumentException e) {
@@ -121,6 +126,7 @@ public class UserController {
         return User.builder()
                 .name(userEntity.getName())
                 .avatar(userEntity.getAvatarUrl())
+                .role(userEntity.getRole())
                 .build();
     }
 
@@ -128,6 +134,7 @@ public class UserController {
         UserEntity userEntity = new UserEntity();
         userEntity.setName(user.getName());
         userEntity.setAvatarUrl(user.getAvatar());
+        userEntity.setRole(user.getRole());
         return userEntity;
     }
 

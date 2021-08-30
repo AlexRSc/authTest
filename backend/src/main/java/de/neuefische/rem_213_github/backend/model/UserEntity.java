@@ -21,7 +21,7 @@ import java.util.Set;
 @Table(name = "rem_user")
 @Getter
 @Setter
-@Builder
+@Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserEntity {

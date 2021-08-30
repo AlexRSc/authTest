@@ -7,6 +7,7 @@ import de.neuefische.rem_213_github.backend.repo.UserRepository;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityExistsException;
@@ -26,11 +27,15 @@ public class UserService {
 
     private UserRepository userRepository;
     private UserServiceConfigProperties userServiceConfigProperties;
+    private final PasswordService passwordService;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, UserServiceConfigProperties userServiceConfigProperties) {
+    public UserService(UserRepository userRepository, UserServiceConfigProperties userServiceConfigProperties, PasswordService passwordService, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.userServiceConfigProperties = userServiceConfigProperties;
+        this.passwordService = passwordService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public UserEntity create(UserEntity userEntity) {
@@ -40,7 +45,13 @@ public class UserService {
         }
         checkUserNameExists(name);
 
-        return userRepository.save(userEntity);
+        String password = passwordService.getNewPassword();
+        String hashedPassword = passwordEncoder.encode(password);
+
+        UserEntity savedUser = userRepository.save(userEntity.toBuilder()
+                .password(hashedPassword)
+                .build());
+        return savedUser.toBuilder().password(password).build();
     }
 
     private void checkUserNameExists(String name) {
