@@ -11,21 +11,20 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.*;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(
         properties = "spring.profiles.active:h2",
@@ -167,6 +166,105 @@ class UserControllerTest {
 
         // Then
         assertThat(response.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
+    }
+
+    @Test
+    public void aUserCanDeleteHerself(){
+        // Given
+        userRepository.save(UserEntity.builder()
+                .name("Gwen")
+                .password("old-password")
+                .avatarUrl("http://thispersondoesnotexist.com/image")
+                .role("user")
+                .build());
+
+        // When
+        HttpEntity<Void> httpEntity = new HttpEntity<>(authorizedHeader("Gwen", "user"));
+        ResponseEntity<User> response = restTemplate
+                .exchange(url()+"/Gwen", HttpMethod.DELETE, httpEntity, User.class);
+
+        // Then
+        assertThat(response.getStatusCode(), is(HttpStatus.OK));
+
+        User actualUser = response.getBody();
+        assertThat(actualUser.getName(), is("Gwen"));
+        assertThat(actualUser.getAvatar(), is("http://thispersondoesnotexist.com/image"));
+        assertThat(actualUser.getRole(), is("user"));
+        assertThat(actualUser.getPassword(), is(nullValue()));
+
+        Optional<UserEntity> foundUserEntity = userRepository.findByName("Gwen");
+        assertTrue(foundUserEntity.isEmpty());
+    }
+
+    @Test
+    public void aUserCanNotDeleteAnotherUser(){
+        // Given
+        userRepository.save(UserEntity.builder()
+                .name("Gwen")
+                .password("old-password")
+                .avatarUrl("http://thispersondoesnotexist.com/image")
+                .role("user")
+                .build());
+
+        // When
+        HttpEntity<Void> httpEntity = new HttpEntity<>(authorizedHeader("Bob", "user"));
+        ResponseEntity<User> response = restTemplate
+                .exchange(url()+"/Gwen", HttpMethod.DELETE, httpEntity, User.class);
+
+        // Then
+        assertThat(response.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
+
+        Optional<UserEntity> foundUserEntity = userRepository.findByName("Gwen");
+        assertTrue(foundUserEntity.isPresent());
+    }
+
+    @Test
+    public void adminCanDeleteAnyUser(){
+        // Given
+        userRepository.save(UserEntity.builder()
+                .name("Gwen")
+                .password("old-password")
+                .avatarUrl("http://thispersondoesnotexist.com/image")
+                .role("user")
+                .build());
+
+        // When
+        HttpEntity<Void> httpEntity = new HttpEntity<>(authorizedHeader("Bob", "admin"));
+        ResponseEntity<User> response = restTemplate
+                .exchange(url()+"/Gwen", HttpMethod.DELETE, httpEntity, User.class);
+
+        // Then
+        assertThat(response.getStatusCode(), is(HttpStatus.OK));
+        User actualUser = response.getBody();
+        assertThat(actualUser.getName(), is("Gwen"));
+        assertThat(actualUser.getAvatar(), is("http://thispersondoesnotexist.com/image"));
+        assertThat(actualUser.getRole(), is("user"));
+        assertThat(actualUser.getPassword(), is(nullValue()));
+
+        Optional<UserEntity> foundUserEntity = userRepository.findByName("Gwen");
+        assertTrue(foundUserEntity.isEmpty());
+    }
+
+    @Test
+    public void adminCanNotDeleteHerself(){
+        // Given
+        userRepository.save(UserEntity.builder()
+                .name("Gwen")
+                .password("old-password")
+                .avatarUrl("http://thispersondoesnotexist.com/image")
+                .role("admin")
+                .build());
+
+        // When
+        HttpEntity<Void> httpEntity = new HttpEntity<>(authorizedHeader("Gwen", "admin"));
+        ResponseEntity<User> response = restTemplate
+                .exchange(url()+"/Gwen", HttpMethod.DELETE, httpEntity, User.class);
+
+        // Then
+        assertThat(response.getStatusCode(), is(HttpStatus.BAD_REQUEST));
+
+        Optional<UserEntity> foundUserEntity = userRepository.findByName("Gwen");
+        assertTrue(foundUserEntity.isPresent());
     }
 
     private HttpHeaders authorizedHeader(String username, String role){

@@ -141,13 +141,20 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(code = SC_NOT_FOUND, message = "User not found")
     })
-    public ResponseEntity<User> delete(@PathVariable String name) {
+    public ResponseEntity<User> delete(@AuthenticationPrincipal UserEntity authUser, @PathVariable String name) {
+        if(authUser.getRole().equals("user") && !authUser.getName().equals(name)){
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        if(authUser.getRole().equals("admin") && authUser.getName().equals(name)){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         Optional<UserEntity> userEntityOptional = userService.delete(name);
         if (userEntityOptional.isPresent()) {
             UserEntity userEntity = userEntityOptional.get();
             User user = map(userEntity);
             return ok(user);
         }
+
         return ResponseEntity.notFound().build();
     }
 
