@@ -22,9 +22,6 @@ import static org.springframework.util.StringUtils.hasText;
 @Setter
 public class UserService {
 
-//    @Value("${rem213.user-service.avatar-url}")
-//    private String avatarUrl;
-
     private UserRepository userRepository;
     private UserServiceConfigProperties userServiceConfigProperties;
     private final PasswordService passwordService;
@@ -102,5 +99,12 @@ public class UserService {
 
     public List<UserEntity> findAll() {
         return userRepository.findAll();
+    }
+
+    public UserEntity updatePassword(String name, String password) {
+        UserEntity userEntity = find(name).orElseThrow(() -> new IllegalArgumentException("Username not found: "+name));
+        String hashedPassword = passwordEncoder.encode(password);
+        userEntity.setPassword(hashedPassword);
+        return userRepository.save(userEntity);
     }
 }

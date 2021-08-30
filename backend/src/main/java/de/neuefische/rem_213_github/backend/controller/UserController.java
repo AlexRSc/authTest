@@ -1,5 +1,6 @@
 package de.neuefische.rem_213_github.backend.controller;
 
+import de.neuefische.rem_213_github.backend.api.NewPassword;
 import de.neuefische.rem_213_github.backend.api.User;
 import de.neuefische.rem_213_github.backend.model.UserEntity;
 import de.neuefische.rem_213_github.backend.service.UserService;
@@ -13,14 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityExistsException;
 import java.util.LinkedList;
@@ -77,6 +71,18 @@ public class UserController {
             return badRequest().build();
         } catch (EntityExistsException e) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
+        }
+    }
+
+    @PutMapping("password")
+    public ResponseEntity<User> updatePassword(@AuthenticationPrincipal UserEntity authUser, @RequestBody NewPassword newPassword){
+        try{
+            UserEntity updatedUserEntity = userService.updatePassword(authUser.getName(), newPassword.getPassword());
+            User updatedUser = map(updatedUserEntity);
+            updatedUser.setPassword(newPassword.getPassword());
+            return ok(updatedUser);
+        }catch(IllegalArgumentException e){
+            return badRequest().build();
         }
     }
 
