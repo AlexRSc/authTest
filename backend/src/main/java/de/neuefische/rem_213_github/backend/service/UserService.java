@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityExistsException;
+import javax.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -22,10 +23,10 @@ import static org.springframework.util.StringUtils.hasText;
 @Setter
 public class UserService {
 
-    private UserRepository userRepository;
-    private UserServiceConfigProperties userServiceConfigProperties;
     private final PasswordService passwordService;
     private final PasswordEncoder passwordEncoder;
+    private UserRepository userRepository;
+    private UserServiceConfigProperties userServiceConfigProperties;
 
     @Autowired
     public UserService(UserRepository userRepository, UserServiceConfigProperties userServiceConfigProperties, PasswordService passwordService, PasswordEncoder passwordEncoder) {
@@ -62,7 +63,7 @@ public class UserService {
     public UserEntity update(Long id, UserEntity updateEntity) {
         Optional<UserEntity> existingUserOpt = userRepository.findById(id);
         if (existingUserOpt.isEmpty()) {
-            throw new EntityExistsException(String.format(
+            throw new EntityNotFoundException(String.format(
                     "User with id=%d not found, unable to update", id));
         }
         UserEntity existingUserEntity = existingUserOpt.get();
@@ -102,7 +103,7 @@ public class UserService {
     }
 
     public UserEntity updatePassword(String name, String password) {
-        UserEntity userEntity = find(name).orElseThrow(() -> new IllegalArgumentException("Username not found: "+name));
+        UserEntity userEntity = find(name).orElseThrow(() -> new IllegalArgumentException("Username not found: " + name));
         String hashedPassword = passwordEncoder.encode(password);
         userEntity.setPassword(hashedPassword);
         return userRepository.save(userEntity);

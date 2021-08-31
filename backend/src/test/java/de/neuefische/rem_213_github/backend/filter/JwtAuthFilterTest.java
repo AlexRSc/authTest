@@ -9,7 +9,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -18,7 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest(
         properties = "spring.profiles.active:h2",
@@ -35,12 +41,12 @@ class JwtAuthFilterTest {
     @Autowired
     private JwtConfig jwtConfig;
 
-    private String url(){
+    private String url() {
         return "http://localhost:" + port + "/auth/me";
     }
 
     @Test
-    public void validJwt(){
+    public void validJwt() {
         // Given
         String username = "Bob";
         Instant now = Instant.now();
@@ -48,7 +54,7 @@ class JwtAuthFilterTest {
         Date exp = Date.from(now.plus(Duration.ofMinutes(jwtConfig.getExpiresAfterMinutes())));
         String token = Jwts.builder()
                 .setClaims(new HashMap<>(
-                        Map.of("role","USER")
+                        Map.of("role", "USER")
                 ))
                 .setIssuedAt(iat)
                 .setExpiration(exp)
@@ -59,16 +65,18 @@ class JwtAuthFilterTest {
         // When
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
+        headers.setContentType(MediaType.APPLICATION_JSON);
         ResponseEntity<User> response = restTemplate
                 .exchange(url(), HttpMethod.GET, new HttpEntity<>(headers), User.class);
 
         // Then
         assertThat(response.getStatusCode(), is(HttpStatus.OK));
+        assertNotNull(response.getBody());
         assertThat(response.getBody().getName(), is(username));
     }
 
     @Test
-    public void wronglySigned(){
+    public void wronglySigned() {
         // Given
         String username = "Bob";
         Instant now = Instant.now();
@@ -77,7 +85,7 @@ class JwtAuthFilterTest {
         String wrongSecret = jwtConfig.getSecret() + "Wrong!!";
         String token = Jwts.builder()
                 .setClaims(new HashMap<>(
-                        Map.of("role","USER")
+                        Map.of("role", "USER")
                 ))
                 .setIssuedAt(iat)
                 .setExpiration(exp)
@@ -95,15 +103,15 @@ class JwtAuthFilterTest {
     }
 
     @Test
-    public void expiredToken(){
+    public void expiredToken() {
         // Given
         String username = "Bob";
-        Instant now = Instant.now().minus(Duration.ofMinutes(jwtConfig.getExpiresAfterMinutes()*2));
+        Instant now = Instant.now().minus(Duration.ofMinutes(jwtConfig.getExpiresAfterMinutes() * 2L));
         Date iat = Date.from(now);
         Date exp = Date.from(now.plus(Duration.ofMinutes(jwtConfig.getExpiresAfterMinutes())));
         String token = Jwts.builder()
                 .setClaims(new HashMap<>(
-                        Map.of("role","USER")
+                        Map.of("role", "USER")
                 ))
                 .setIssuedAt(iat)
                 .setExpiration(exp)

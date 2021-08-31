@@ -12,12 +12,18 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.persistence.EntityExistsException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +33,7 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_CONFLICT;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static org.springframework.http.ResponseEntity.badRequest;
+import static org.springframework.http.ResponseEntity.notFound;
 import static org.springframework.http.ResponseEntity.ok;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON_VALUE;
 
@@ -59,45 +65,34 @@ public class UserController {
             @ApiResponse(code = SC_CONFLICT, message = "Unable to create User, user already exists")
     })
     public ResponseEntity<User> create(@AuthenticationPrincipal UserEntity authUser, @RequestBody User user) {
-        if(!authUser.getRole().equals("admin")){
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        if (!authUser.getRole().equals("admin")) {
+            throw new UnauthorizedUserException("Only users in role 'admin' are allowed to create other users");
         }
-        try {
-            UserEntity userEntity = map(user);
 
-            UserEntity createdUserEntity = userService.create(userEntity);
-            User createdUser = map(createdUserEntity);
-            createdUser.setPassword(createdUserEntity.getPassword());
-            return ok(createdUser);
+        UserEntity userEntity = map(user);
 
-        } catch (IllegalArgumentException e) {
-            return badRequest().build();
-        } catch (EntityExistsException e) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
-        }
+        UserEntity createdUserEntity = userService.create(userEntity);
+        User createdUser = map(createdUserEntity);
+        createdUser.setPassword(createdUserEntity.getPassword());
+        return ok(createdUser);
     }
 
     @PutMapping("password")
-    public ResponseEntity<User> updatePassword(@AuthenticationPrincipal UserEntity authUser, @RequestBody NewPassword newPassword){
-        try{
-            UserEntity updatedUserEntity = userService.updatePassword(authUser.getName(), newPassword.getPassword());
-            User updatedUser = map(updatedUserEntity);
-            updatedUser.setPassword(newPassword.getPassword());
-            return ok(updatedUser);
-        }catch(IllegalArgumentException e){
-            return badRequest().build();
-        }
+    public ResponseEntity<User> updatePassword(@AuthenticationPrincipal UserEntity authUser, @RequestBody NewPassword newPassword) {
+        UserEntity updatedUserEntity = userService.updatePassword(authUser.getName(), newPassword.getPassword());
+        User updatedUser = map(updatedUserEntity);
+        updatedUser.setPassword(newPassword.getPassword());
+        return ok(updatedUser);
     }
 
     @PutMapping("{name}/reset-password")
-    public ResponseEntity<User> resetPassword(@AuthenticationPrincipal UserEntity authUser, @PathVariable String name){
-        if(!authUser.getRole().equals("admin")){
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+    public ResponseEntity<User> resetPassword(@AuthenticationPrincipal UserEntity authUser, @PathVariable String name) {
+        if (!authUser.getRole().equals("admin")) {
+            throw new UnauthorizedUserException("User is not in required role 'admin'");
         }
         Optional<UserEntity> optionalUserEntity = userService.find(name);
-        if(optionalUserEntity.isEmpty()){
-            return badRequest().build();
-        }
+        if (optionalUserEntity.isEmpty())
+            throw new IllegalArgumentException(String.format("Unable to reset password for user name=%s", name));
 
         String password = passwordService.getNewPassword();
 
@@ -120,7 +115,7 @@ public class UserController {
             User user = map(userEntity);
             return ok(user);
         }
-        return ResponseEntity.notFound().build();
+        return notFound().build();
     }
 
     @GetMapping(produces = APPLICATION_JSON_VALUE)
@@ -142,20 +137,20 @@ public class UserController {
             @ApiResponse(code = SC_NOT_FOUND, message = "User not found")
     })
     public ResponseEntity<User> delete(@AuthenticationPrincipal UserEntity authUser, @PathVariable String name) {
-        if(authUser.getRole().equals("user") && !authUser.getName().equals(name)){
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        if (authUser.getRole().equals("user") && !authUser.getName().equals(name)) {
+            throw new UnauthorizedUserException("User in role 'user' must not delete an other user");
         }
-        if(authUser.getRole().equals("admin") && authUser.getName().equals(name)){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        if (authUser.getRole().equals("admin") && authUser.getName().equals(name)) {
+            throw new IllegalArgumentException("User in role 'admin' must delete itself");
         }
+
         Optional<UserEntity> userEntityOptional = userService.delete(name);
         if (userEntityOptional.isPresent()) {
             UserEntity userEntity = userEntityOptional.get();
             User user = map(userEntity);
             return ok(user);
         }
-
-        return ResponseEntity.notFound().build();
+        return notFound().build();
     }
 
     private User map(UserEntity userEntity) {

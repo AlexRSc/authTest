@@ -13,13 +13,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest(
         properties = "spring.profiles.active:h2",
@@ -74,6 +78,8 @@ class AuthControllerTest {
 
         // Then
         assertThat(response.getStatusCode(), is(HttpStatus.OK));
+        assertNotNull(response.getBody());
+
         String token = response.getBody().getToken();
         Claims claims = Jwts.parser().setSigningKey(jwtConfig.getSecret())
                 .parseClaimsJws(token).getBody();
@@ -89,22 +95,30 @@ class AuthControllerTest {
                 .password("password").build();
 
         // When
+        HttpEntity<Credentials> httpEntity = new HttpEntity<>(credentials, getHttpHeaders());
         ResponseEntity<AccessToken> response = restTemplate
-                .postForEntity(url(), credentials, AccessToken.class);
+                .postForEntity(url(), httpEntity, AccessToken.class);
 
         // Then
         assertThat(response.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
         assertThat(response.getBody(), nullValue());
     }
 
+    private HttpHeaders getHttpHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return headers;
+    }
+
     @Test
     public void noCredentials(){
         // Given
-        Credentials credentials = null;
+        Credentials credentials = new Credentials();
 
         // When
+        HttpEntity<Credentials> httpEntity = new HttpEntity<>(credentials, getHttpHeaders());
         ResponseEntity<AccessToken> response = restTemplate
-                .postForEntity(url(), credentials, AccessToken.class);
+                .postForEntity(url(), httpEntity, AccessToken.class);
 
         // Then
         assertThat(response.getStatusCode(), is(HttpStatus.BAD_REQUEST));
