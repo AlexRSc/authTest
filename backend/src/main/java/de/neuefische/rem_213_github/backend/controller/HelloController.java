@@ -22,9 +22,10 @@ import static org.springframework.http.ResponseEntity.ok;
 public class HelloController {
 
     public static final String HELLO_TAG = "Hello";
+    public static final String HELLO_URL = "/";
 
     @ApiOperation(value = "Say hello to REM 21-3", hidden = true)
-    @GetMapping("/")
+    @GetMapping(HELLO_URL)
     public ResponseEntity<String> hello() {
         String cssStyle = "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);";
         String swaggerLink = "/api/rem213/swagger-ui/";

@@ -30,25 +30,24 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-
         try {
-
             String authHeader = request.getHeader("Authorization");
             if (authHeader != null) {
                 String token = authHeader.replace("Bearer", "").trim();
 
-                    Claims claims = jwtService.getClaims(token);
-                    String username = claims.getSubject();
-                    String role = claims.get("role", String.class);
+                Claims claims = jwtService.getClaims(token);
+                String username = claims.getSubject();
+                String role = claims.get("role", String.class);
 
-                    SecurityContextHolder.getContext().setAuthentication(
-                            new UsernamePasswordAuthenticationToken(
-                                    UserEntity.builder().name(username).role(role).build(),
-                                    "",
-                                    List.of(new SimpleGrantedAuthority(role))
-                            )
-                    );
-
+                SecurityContextHolder.getContext().setAuthentication(
+                        new UsernamePasswordAuthenticationToken(
+                                UserEntity.builder()
+                                        .name(username)
+                                        .role(role).build(),
+                                "",
+                                List.of(new SimpleGrantedAuthority(role))
+                        )
+                );
             }
 
         } catch (JwtException e) {

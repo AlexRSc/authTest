@@ -23,6 +23,20 @@ services:
     networks:
       - local-bridge
 
+  rem213-backend:
+    image: rem213-backend:junit
+    build: .
+    container_name: rem213-backend
+    mem_limit: 512m
+    depends_on:
+      - rem213-postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - local-bridge
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
 networks:
   local-bridge: # default network
     driver: bridge

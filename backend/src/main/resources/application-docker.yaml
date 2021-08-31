@@ -1,0 +1,9 @@
+profile:
+  datasource:
+    url: postgresql://rem213-postgres:5432/rem213
+    user: admin
+    pass: 12345
+
+rem213:
+    user-service:
+      avatar-url: "http://docker.de"

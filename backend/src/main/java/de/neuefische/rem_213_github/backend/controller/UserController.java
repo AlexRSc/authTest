@@ -5,6 +5,7 @@ import de.neuefische.rem_213_github.backend.api.User;
 import de.neuefische.rem_213_github.backend.model.UserEntity;
 import de.neuefische.rem_213_github.backend.service.PasswordService;
 import de.neuefische.rem_213_github.backend.service.UserService;
+import io.jsonwebtoken.lang.Assert;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -24,11 +25,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
 import static de.neuefische.rem_213_github.backend.controller.UserController.USER_CONTROLLER_TAG;
+import static java.lang.String.format;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_CONFLICT;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
@@ -70,32 +73,41 @@ public class UserController {
         }
 
         UserEntity userEntity = map(user);
-
         UserEntity createdUserEntity = userService.create(userEntity);
+
         User createdUser = map(createdUserEntity);
         createdUser.setPassword(createdUserEntity.getPassword());
+
         return ok(createdUser);
     }
 
     @PutMapping("password")
+    @ApiResponses(value = {
+            @ApiResponse(code = SC_BAD_REQUEST, message = "User not found, or password empty")
+    })
     public ResponseEntity<User> updatePassword(@AuthenticationPrincipal UserEntity authUser, @RequestBody NewPassword newPassword) {
-        UserEntity updatedUserEntity = userService.updatePassword(authUser.getName(), newPassword.getPassword());
+        String password = newPassword.getPassword();
+        Assert.hasText(password, "Password must not be blank");
+
+        UserEntity updatedUserEntity = userService.updatePassword(authUser.getName(), password);
         User updatedUser = map(updatedUserEntity);
-        updatedUser.setPassword(newPassword.getPassword());
+        updatedUser.setPassword(password);
         return ok(updatedUser);
     }
 
     @PutMapping("{name}/reset-password")
+    @ApiResponses(value = {
+            @ApiResponse(code = SC_NOT_FOUND, message = "User not found")
+    })
     public ResponseEntity<User> resetPassword(@AuthenticationPrincipal UserEntity authUser, @PathVariable String name) {
         if (!authUser.getRole().equals("admin")) {
             throw new UnauthorizedUserException("User is not in required role 'admin'");
         }
         Optional<UserEntity> optionalUserEntity = userService.find(name);
         if (optionalUserEntity.isEmpty())
-            throw new IllegalArgumentException(String.format("Unable to reset password for user name=%s", name));
+            throw new EntityNotFoundException(format("Unable to reset password for unknown user name=%s", name));
 
         String password = passwordService.getNewPassword();
-
         UserEntity updatedUserEntity = userService.updatePassword(name, password);
 
         User updatedUser = map(updatedUserEntity);

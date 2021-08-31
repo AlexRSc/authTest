@@ -9,6 +9,7 @@ import de.neuefische.rem_213_github.backend.rest.github.GithubPullRequestDto;
 import de.neuefische.rem_213_github.backend.rest.github.GithubRepoDto;
 import de.neuefische.rem_213_github.backend.rest.github.GithubRepoDtos;
 import de.neuefische.rem_213_github.backend.rest.github.GithubUserDto;
+import io.jsonwebtoken.lang.Assert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,14 +35,17 @@ public class GithubService {
     }
 
     public GithubRepoDtos getUserRepos(GithubUserDto githubUserDto) {
-        GithubRepoDtos githubRepoDtos = githubClient.getUserRepos(githubUserDto.getLogin());
+        String login = githubUserDto.getLogin();
+        Assert.hasText(login, "Login must not be null to get user repos");
+
+        GithubRepoDtos githubRepoDtos = githubClient.getUserRepos(login);
 
         List<GithubRepoDto> githubRepoDtoList = githubRepoDtos.getGithubRepoDtos();
         if (githubRepoDtoList.isEmpty()) {
             return githubRepoDtos;
         }
 
-        Optional<UserEntity> existingUserEntityOpt = userService.find(githubUserDto.getName());
+        Optional<UserEntity> existingUserEntityOpt = userService.find(login);
         if (existingUserEntityOpt.isPresent()) {
             // update existing user
             UserEntity existingUserEntity = existingUserEntityOpt.get();
@@ -56,7 +60,7 @@ public class GithubService {
             // create new user with all repos
             UserEntity userEntity = new UserEntity();
             userEntity.setAvatarUrl(githubUserDto.getAvatar_url());
-            userEntity.setName(githubUserDto.getName());
+            userEntity.setName(login);
 
             Set<RepoEntity> userRepos = map(githubRepoDtoList);
             userEntity.addRepos(userRepos);

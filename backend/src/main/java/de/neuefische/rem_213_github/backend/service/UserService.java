@@ -39,7 +39,7 @@ public class UserService {
     public UserEntity create(UserEntity userEntity) {
         String name = userEntity.getName();
         if (!hasText(name)) {
-            throw new IllegalArgumentException("Name must not be blank");
+            throw new IllegalArgumentException("Name must not be blank to create user");
         }
         checkUserNameExists(name);
 
@@ -103,7 +103,9 @@ public class UserService {
     }
 
     public UserEntity updatePassword(String name, String password) {
-        UserEntity userEntity = find(name).orElseThrow(() -> new IllegalArgumentException("Username not found: " + name));
+        UserEntity userEntity = find(name).orElseThrow(()
+                -> new IllegalArgumentException(String.format("User name=%s not found", name)));
+
         String hashedPassword = passwordEncoder.encode(password);
         userEntity.setPassword(hashedPassword);
         return userRepository.save(userEntity);

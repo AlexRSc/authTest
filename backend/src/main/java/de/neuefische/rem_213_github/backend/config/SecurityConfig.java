@@ -4,7 +4,6 @@ import de.neuefische.rem_213_github.backend.filter.JwtAuthFilter;
 import de.neuefische.rem_213_github.backend.service.UserEntityDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -16,10 +15,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import static de.neuefische.rem_213_github.backend.controller.AuthController.ACCESS_TOKEN_URL;
+import static de.neuefische.rem_213_github.backend.controller.HelloController.HELLO_URL;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
+
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    private final String[] SWAGGER_URLS = {"/v2/api-docs/**","/swagger-ui/**", "/swagger-resources/**"};
+    private final String[] SWAGGER_URLS = {"/v2/api-docs/**", "/swagger-ui/**", "/swagger-resources/**"};
 
     private final UserEntityDetailsService detailsService;
     private final JwtAuthFilter jwtAuthFilter;
@@ -32,11 +36,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-       auth.userDetailsService(detailsService);
+        auth.userDetailsService(detailsService);
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
@@ -49,8 +53,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable().authorizeRequests()
-                .antMatchers(HttpMethod.GET, SWAGGER_URLS).permitAll()
-                .antMatchers(HttpMethod.POST, "/auth/access_token").permitAll()
+                .antMatchers(GET, HELLO_URL).permitAll()
+                .antMatchers(GET, SWAGGER_URLS).permitAll()
+                .antMatchers(POST, ACCESS_TOKEN_URL).permitAll()
                 .antMatchers("/**").authenticated()
                 .and()
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
@@ -58,7 +63,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Override
-    public void configure(WebSecurity web) throws Exception {
-        web.ignoring().antMatchers(HttpMethod.GET,SWAGGER_URLS);
+    public void configure(WebSecurity web) {
+        web.ignoring()
+                .antMatchers(GET, SWAGGER_URLS)
+                .antMatchers(GET, HELLO_URL);
     }
 }

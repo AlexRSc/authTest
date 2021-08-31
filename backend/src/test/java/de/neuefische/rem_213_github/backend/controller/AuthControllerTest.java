@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import static de.neuefische.rem_213_github.backend.controller.AuthController.ACCESS_TOKEN_URL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -34,10 +35,6 @@ class AuthControllerTest {
     @LocalServerPort
     private int port;
 
-    private String url(){
-        return "http://localhost:" + port + "/auth/access_token";
-    }
-
     @Autowired
     private TestRestTemplate restTemplate;
 
@@ -50,13 +47,17 @@ class AuthControllerTest {
     @Autowired
     private JwtConfig jwtConfig;
 
+    private String url() {
+        return "http://localhost:" + port + ACCESS_TOKEN_URL;
+    }
+
     @AfterEach
-    public void clearDb(){
+    public void clearDb() {
         userRepository.deleteAll();
     }
 
     @Test
-    public void successfulLogin(){
+    public void successfulLogin() {
         // Given
         String username = "bill";
         String password = "12345";
@@ -88,7 +89,7 @@ class AuthControllerTest {
     }
 
     @Test
-    public void badCredentials(){
+    public void badCredentials() {
         // Given
         Credentials credentials = Credentials.builder()
                 .username("Lisa")
@@ -111,7 +112,7 @@ class AuthControllerTest {
     }
 
     @Test
-    public void noCredentials(){
+    public void noCredentials() {
         // Given
         Credentials credentials = new Credentials();
 
