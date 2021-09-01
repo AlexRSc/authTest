@@ -17,6 +17,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,6 +37,7 @@ import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON_VALUE;
         tags = AUTH_TAG
 )
 @RestController
+@CrossOrigin
 public class AuthController {
 
     public static final String AUTH_TAG = "Auth";
@@ -52,7 +55,7 @@ public class AuthController {
     }
 
     @Operation(summary = "Get logged in authentication principal.")
-    @GetMapping(value = "/auth/me", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/auth/me", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<User> getLoggedInUser(@AuthenticationPrincipal UserEntity user) {
         return ok(
                 User.builder().name(user.getName()).build()
