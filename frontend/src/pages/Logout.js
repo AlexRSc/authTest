@@ -3,7 +3,7 @@ import Header from '../components/Header'
 import Navbar from '../components/Navbar'
 import Button from '../components/Button'
 import Main from '../components/Main'
-import { Username } from './Username'
+import Username from '../components/Username'
 
 export default function Logout() {
   return (

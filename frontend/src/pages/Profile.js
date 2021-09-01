@@ -9,13 +9,13 @@ import Main from '../components/Main'
 import Avatar from '../components/Avatar'
 import Badge from '../components/Badge'
 
-export default function Profile() {
+export default function Profile({ user }) {
   return (
     <Page>
-      <Header title="Jane Doe" />
+      <Header title={user.username} />
       <Main>
-        <Avatar src="https://thispersondoesnotexist.com/image" alt="" />
-        <Badge>user</Badge>
+        <Avatar src={user.avatar} alt="" />
+        <Badge>{user.role}</Badge>
         <Button as={LinkStyled} to="/change-password">
           Change Password
         </Button>

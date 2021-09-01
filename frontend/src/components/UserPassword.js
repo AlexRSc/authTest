@@ -1,6 +1,6 @@
 import Button from './Button'
 import styled from 'styled-components/macro'
-import { Username } from '../pages/Username'
+import Username from './Username'
 
 export default function UserPassword({ user, password, ...props }) {
   return (
