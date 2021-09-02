@@ -5,8 +5,10 @@ import Button from '../components/Button'
 import Select from '../components/Select'
 import Main from '../components/Main'
 import UserPassword from '../components/UserPassword'
+import { useAuth } from '../auth/AuthProvider'
 
-export default function Admin({ user }) {
+export default function Admin() {
+  const { user } = useAuth()
   return (
     <Page>
       <Header title="Admin" />

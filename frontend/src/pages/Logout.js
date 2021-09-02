@@ -4,8 +4,10 @@ import Navbar from '../components/Navbar'
 import Button from '../components/Button'
 import Main from '../components/Main'
 import Username from '../components/Username'
+import { useAuth } from '../auth/AuthProvider'
 
-export default function Logout({ user, onLogout }) {
+export default function Logout() {
+  const { user, logout } = useAuth()
   return (
     <Page>
       <Header title="Logout" />
@@ -13,7 +15,7 @@ export default function Logout({ user, onLogout }) {
         <p>
           You are logged in as <Username>{user.username}</Username>
         </p>
-        <Button onClick={onLogout}>Log out</Button>
+        <Button onClick={logout}>Log out</Button>
       </Main>
       <Navbar user={user} />
     </Page>

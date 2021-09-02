@@ -8,16 +8,20 @@ import { useState } from 'react'
 import { Redirect } from 'react-router-dom'
 import Loading from '../components/Loading'
 import Error from '../components/Error'
+import { useAuth } from '../auth/AuthProvider'
 
 const initialState = {
   username: '',
   password: '',
 }
 
-export default function Login({ token, onLogin, user }) {
+export default function Login() {
+  const { token, login, user } = useAuth()
   const [credentials, setCredentials] = useState(initialState)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState()
+
+  console.log({ token, login, user })
 
   const handleCredentialsChange = event =>
     setCredentials({ ...credentials, [event.target.name]: event.target.value })
@@ -26,7 +30,7 @@ export default function Login({ token, onLogin, user }) {
     event.preventDefault()
     setLoading(true)
     setError()
-    onLogin(credentials).catch(error => {
+    login(credentials).catch(error => {
       setError(error)
       setLoading(false)
     })

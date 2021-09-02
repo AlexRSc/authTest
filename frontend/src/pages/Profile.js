@@ -8,8 +8,11 @@ import { Link } from 'react-router-dom'
 import Main from '../components/Main'
 import Avatar from '../components/Avatar'
 import Badge from '../components/Badge'
+import { useAuth } from '../auth/AuthProvider'
 
-export default function Profile({ user }) {
+export default function Profile() {
+  const { user } = useAuth()
+
   return (
     <Page>
       <Header title={user.username} />

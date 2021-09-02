@@ -5,8 +5,10 @@ import Button from '../components/Button'
 import TextField from '../components/TextField'
 import ButtonGroup from '../components/ButtonGroup'
 import Main from '../components/Main'
+import { useAuth } from '../auth/AuthProvider'
 
-export default function ChangePassword({ user }) {
+export default function ChangePassword() {
+  const { user } = useAuth()
   return (
     <Page>
       <Header title="Change Password" />
