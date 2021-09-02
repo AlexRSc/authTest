@@ -1,15 +1,15 @@
 import { NavLink } from 'react-router-dom'
 import styled from 'styled-components/macro'
 
-export default function Navbar(props) {
+export default function Navbar({ user, ...props }) {
   return (
     <Wrapper {...props}>
-      <NavLink exact to="/profile">
+      <NavLink exact to="/">
         Profile
       </NavLink>
-      <NavLink to="/login">Login</NavLink>
-      <NavLink to="/logout">Logout</NavLink>
-      <NavLink to="/admin">Admin</NavLink>
+      {user && <NavLink to="/logout">Logout</NavLink>}
+      {!user && <NavLink to="/login">Login</NavLink>}
+      {user && user.role === 'admin' && <NavLink to="/admin">Admin</NavLink>}
     </Wrapper>
   )
 }
@@ -23,7 +23,7 @@ const Wrapper = styled.nav`
 
   a {
     flex-grow: 1;
-    margin: 0 var(--size-m);
+    margin: 0 var(--size-l);
     text-align: center;
     text-decoration: none;
     color: var(--neutral-dark);

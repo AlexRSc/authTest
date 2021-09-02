@@ -5,17 +5,17 @@ import Button from '../components/Button'
 import Main from '../components/Main'
 import Username from '../components/Username'
 
-export default function Logout() {
+export default function Logout({ user, onLogout }) {
   return (
     <Page>
       <Header title="Logout" />
       <Main>
         <p>
-          You are logged in as <Username>Jane Doe</Username>
+          You are logged in as <Username>{user.username}</Username>
         </p>
-        <Button>Log out</Button>
+        <Button onClick={onLogout}>Log out</Button>
       </Main>
-      <Navbar />
+      <Navbar user={user} />
     </Page>
   )
 }

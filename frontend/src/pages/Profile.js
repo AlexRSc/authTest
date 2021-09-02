@@ -20,7 +20,7 @@ export default function Profile({ user }) {
           Change Password
         </Button>
       </Main>
-      <Navbar />
+      <Navbar user={user} />
     </Page>
   )
 }

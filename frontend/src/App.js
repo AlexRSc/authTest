@@ -4,10 +4,10 @@ import Profile from './pages/Profile'
 import ChangePassword from './pages/ChangePassword'
 import Logout from './pages/Logout'
 import Admin from './pages/Admin'
-import Welcome from './pages/Welcome'
 import { useState } from 'react'
 import { getToken } from './services/api-service'
 import jwt from 'jsonwebtoken'
+import ProtectedRoute from './auth/ProtectedRoute'
 
 export default function App() {
   const [token, setToken] = useState()
@@ -22,19 +22,26 @@ export default function App() {
 
   const login = credentials => getToken(credentials).then(setToken)
 
+  const logout = () => setToken()
+
   return (
     <Router>
       <Switch>
-        <Route exact path="/" component={Welcome} />
-        <Route exact path="/profile">
-          <Profile user={user} />
-        </Route>
         <Route path="/login">
-          <Login onLogin={login} token={token} />
+          <Login onLogin={login} token={token} user={user} />
         </Route>
-        <Route path="/logout" component={Logout} />
-        <Route path="/admin" component={Admin} />
-        <Route path="/change-password" component={ChangePassword} />
+        <ProtectedRoute user={user} exact path="/">
+          <Profile user={user} />
+        </ProtectedRoute>
+        <ProtectedRoute user={user} path="/logout">
+          <Logout onLogout={logout} user={user} />
+        </ProtectedRoute>
+        <ProtectedRoute user={user} path="/change-password">
+          <ChangePassword user={user} />
+        </ProtectedRoute>
+        <ProtectedRoute adminOnly user={user} path="/admin">
+          <Admin user={user} />
+        </ProtectedRoute>
       </Switch>
     </Router>
   )

@@ -14,7 +14,7 @@ const initialState = {
   password: '',
 }
 
-export default function Login({ token, onLogin }) {
+export default function Login({ token, onLogin, user }) {
   const [credentials, setCredentials] = useState(initialState)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState()
@@ -33,7 +33,7 @@ export default function Login({ token, onLogin }) {
   }
 
   if (token) {
-    return <Redirect to="/profile" />
+    return <Redirect to="/" />
   }
 
   return (
@@ -59,7 +59,7 @@ export default function Login({ token, onLogin }) {
         </Main>
       )}
       {error && <Error>{error.message}</Error>}
-      <Navbar />
+      <Navbar user={user} />
     </Page>
   )
 }

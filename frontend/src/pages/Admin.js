@@ -6,7 +6,7 @@ import Select from '../components/Select'
 import Main from '../components/Main'
 import UserPassword from '../components/UserPassword'
 
-export default function Admin() {
+export default function Admin({ user }) {
   return (
     <Page>
       <Header title="Admin" />
@@ -16,7 +16,7 @@ export default function Admin() {
         <Button>Delete User</Button>
       </Main>
       <UserPassword user="Janedoe" password="12345" />
-      <Navbar />
+      <Navbar user={user} />
     </Page>
   )
 }

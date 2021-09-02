@@ -6,7 +6,7 @@ import TextField from '../components/TextField'
 import ButtonGroup from '../components/ButtonGroup'
 import Main from '../components/Main'
 
-export default function ChangePassword() {
+export default function ChangePassword({ user }) {
   return (
     <Page>
       <Header title="Change Password" />
@@ -22,7 +22,7 @@ export default function ChangePassword() {
           <Button>Save</Button>
         </ButtonGroup>
       </Main>
-      <Navbar />
+      <Navbar user={user} />
     </Page>
   )
 }
