@@ -16,12 +16,10 @@ const initialState = {
 }
 
 export default function Login() {
-  const { token, login, user } = useAuth()
+  const { login, user } = useAuth()
   const [credentials, setCredentials] = useState(initialState)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState()
-
-  console.log({ token, login, user })
 
   const handleCredentialsChange = event =>
     setCredentials({ ...credentials, [event.target.name]: event.target.value })
@@ -36,7 +34,7 @@ export default function Login() {
     })
   }
 
-  if (token) {
+  if (user) {
     return <Redirect to="/" />
   }
 
